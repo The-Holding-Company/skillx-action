@@ -1,0 +1,31 @@
+# CODEOWNERS — The Holding Company
+# Docs: https://docs.github.com/articles/about-code-owners
+# Owners here are REQUIRED reviewers once branch protection enables
+# "Require review from Code Owners". Last matching pattern wins.
+#
+# Least privilege: prefer TEAM handles over individuals so access is
+# managed by team membership, not scattered across files. A team named
+# here must have at least WRITE (push) access to the repo, or GitHub
+# ignores it as an owner.
+
+# ---- Default owner (everything not matched below) -------------------
+*                       @The-Holding-Company/ops @chrisbergeron
+
+# ---- CI / automation: highest blast radius, tightest ownership ------
+/.github/               @The-Holding-Company/ops @chrisbergeron
+/.github/workflows/     @The-Holding-Company/ops @chrisbergeron
+
+# ---- Infrastructure as code ----------------------------------------
+*.tf                    @The-Holding-Company/ops @chrisbergeron
+*.tfvars                @The-Holding-Company/ops @chrisbergeron
+/terraform/             @The-Holding-Company/ops @chrisbergeron
+/deploy/                @The-Holding-Company/ops @chrisbergeron
+Dockerfile              @The-Holding-Company/ops @chrisbergeron
+docker-compose*.yml     @The-Holding-Company/ops @chrisbergeron
+*.tf.json               @The-Holding-Company/ops @chrisbergeron
+
+# ---- Secrets / policy surfaces (should rarely change; require review)
+/.gitleaks.toml         @The-Holding-Company/ops @chrisbergeron
+/SECURITY.md            @The-Holding-Company/ops @chrisbergeron
+/.github/dependabot.yml @The-Holding-Company/ops @chrisbergeron
+*.rego                  @The-Holding-Company/ops @chrisbergeron

@@ -1,0 +1,92 @@
+name: 'skillx — verify a signed skill'
+description: 'Verify a signed agent SKILL.md (JWS + did:web) and scan it for prompt-injection before your pipeline or agent trusts it. From skillx.md, the trust layer for the agentic web.'
+author: 'The Holding Company'
+branding:
+  icon: 'shield'
+  color: 'green'
+inputs:
+  skill-url:
+    description: 'HTTPS URL (or local path) of the SKILL.md to verify.'
+    required: true
+  sig-url:
+    description: 'Signature location (default: <skill-url>.sig).'
+    required: false
+    default: ''
+  jwk:
+    description: 'Path to a local public JWK to verify against, instead of resolving the publisher''s did:web DID document over HTTPS.'
+    required: false
+    default: ''
+  scan:
+    description: 'Also run the prompt-injection content scan (recommended).'
+    required: false
+    default: 'true'
+  allow-unsigned:
+    description: 'When "true", an UNSIGNED result does not fail the job. An INVALID signature always fails.'
+    required: false
+    default: 'false'
+  python-version:
+    description: 'Python version used to run the verifier.'
+    required: false
+    default: '3.12'
+outputs:
+  result:
+    description: 'Exactly one of VERIFIED, UNSIGNED, or INVALID.'
+    value: ${{ steps.verify.outputs.result }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install verifier dependencies
+      shell: bash
+      run: python3 -m pip install --quiet 'cryptography>=41'
+    - name: Verify skill
+      id: verify
+      shell: bash
+      env:
+        SKILL_URL: ${{ inputs.skill-url }}
+        SIG_URL: ${{ inputs.sig-url }}
+        JWK_PATH: ${{ inputs.jwk }}
+        SCAN: ${{ inputs.scan }}
+        ALLOW_UNSIGNED: ${{ inputs.allow-unsigned }}
+      run: |
+        set -euo pipefail
+        args=( "$SKILL_URL" )
+        if [ -n "$SIG_URL" ];  then args+=( --sig "$SIG_URL" ); fi
+        if [ -n "$JWK_PATH" ]; then args+=( --jwk "$JWK_PATH" ); fi
+        if [ "$SCAN" = "true" ]; then args+=( --scan ); fi
+
+        set +e
+        python3 "$GITHUB_ACTION_PATH/skillx.py" verify "${args[@]}" | tee /tmp/skillx_out.txt
+        rc=${PIPESTATUS[0]}
+        set -e
+
+        # skillx.py exit codes: 0 = VERIFIED, 2 = UNSIGNED, anything else = INVALID.
+        case "$rc" in
+          0) result=VERIFIED ;;
+          2) result=UNSIGNED ;;
+          *) result=INVALID ;;
+        esac
+        echo "result=$result" >> "$GITHUB_OUTPUT"
+
+        {
+          echo "### skillx verification: \`$result\`"
+          echo ""
+          echo "\`$SKILL_URL\`"
+          echo ""
+          echo '```'
+          cat /tmp/skillx_out.txt
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$result" = "INVALID" ]; then
+          echo "::error title=skillx::Signature INVALID for $SKILL_URL — refusing to trust."
+          exit 1
+        fi
+        if [ "$result" = "UNSIGNED" ] && [ "$ALLOW_UNSIGNED" != "true" ]; then
+          echo "::error title=skillx::$SKILL_URL is UNSIGNED. Set allow-unsigned: true to permit."
+          exit 1
+        fi
+        echo "skillx: $result"

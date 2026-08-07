@@ -1,0 +1,31 @@
+name: dogfood
+
+# Runs the action against itself: verify the first signed skill on the open web.
+# Proves the published action works end-to-end over real did:web resolution.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 8 * * 1'   # Mondays 08:17 UTC — catch upstream key/site drift
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify a known-signed skill
+        id: skillx
+        uses: ./
+        with:
+          skill-url: https://username.md/SKILL.md
+      - name: Assert VERIFIED
+        shell: bash
+        run: |
+          test "${{ steps.skillx.outputs.result }}" = "VERIFIED" \
+            || { echo "expected VERIFIED, got '${{ steps.skillx.outputs.result }}'"; exit 1; }

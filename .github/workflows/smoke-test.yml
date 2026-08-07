@@ -1,0 +1,65 @@
+# id: e7b16b3d-a618-40a8-b82e-ff1869ab2278
+# slug: skillx-gha-rollout
+# entity: holdingco
+name: smoke-test
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'   # weekly Monday — catches did:web / cert / registry drift
+
+permissions:
+  contents: read
+
+jobs:
+  verified:
+    name: signed first-party skill → VERIFIED
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: skillx
+        uses: ./
+        with:
+          skill-url: https://skillx.md/skills/skillx-verify/SKILL.md
+      - name: assert VERIFIED
+        env:
+          RESULT: ${{ steps.skillx.outputs.result }}
+        run: |
+          echo "result=$RESULT"
+          test "$RESULT" = "VERIFIED"
+
+  unsigned:
+    name: unsigned document → UNSIGNED (allowed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: skillx
+        uses: ./
+        with:
+          skill-url: https://skillx.md/llms.txt
+          allow-unsigned: 'true'
+      - name: assert UNSIGNED
+        env:
+          RESULT: ${{ steps.skillx.outputs.result }}
+        run: |
+          echo "result=$RESULT"
+          test "$RESULT" = "UNSIGNED"
+
+  unsigned-blocks-by-default:
+    name: unsigned document → job fails (default gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: skillx
+        uses: ./
+        continue-on-error: true
+        with:
+          skill-url: https://skillx.md/llms.txt
+      - name: assert the gate fired
+        env:
+          OUTCOME: ${{ steps.skillx.outcome }}
+        run: |
+          echo "outcome=$OUTCOME"
+          test "$OUTCOME" = "failure"

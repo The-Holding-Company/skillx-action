@@ -1,0 +1,10 @@
+# id: e7b16b3d-a618-40a8-b82e-ff1869ab2278
+# slug: skillx-gha-rollout
+# entity: holdingco
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly" }
+    groups:
+      actions: { patterns: ["*"] }
