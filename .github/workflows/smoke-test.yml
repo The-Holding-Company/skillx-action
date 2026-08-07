@@ -18,7 +18,7 @@ jobs:
     name: signed first-party skill → VERIFIED
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: skillx
         uses: ./
         with:
@@ -34,7 +34,7 @@ jobs:
     name: unsigned document → UNSIGNED (allowed)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: skillx
         uses: ./
         with:
@@ -51,7 +51,7 @@ jobs:
     name: unsigned document → job fails (default gate)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: skillx
         uses: ./
         continue-on-error: true
