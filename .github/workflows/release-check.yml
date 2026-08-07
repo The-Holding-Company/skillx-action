@@ -1,0 +1,28 @@
+# id: e7b16b3d-a618-40a8-b82e-ff1869ab2278
+# slug: skillx-gha-rollout
+# entity: holdingco
+name: release-check
+# Consumes the PUBLISHED action by ref (@v1), exactly as a third party would —
+# proves the marketplace-facing reference resolves, independent of `uses: ./`.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  consume-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - id: skillx
+        uses: The-Holding-Company/skillx-action@v1
+        with:
+          skill-url: https://skillx.md/skills/skillx-verify/SKILL.md
+      - name: assert VERIFIED
+        env:
+          RESULT: ${{ steps.skillx.outputs.result }}
+        run: |
+          echo "result=$RESULT"
+          test "$RESULT" = "VERIFIED"
