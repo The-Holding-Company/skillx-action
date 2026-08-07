@@ -1,5 +1,5 @@
 name: 'skillx — verify a signed skill'
-description: 'Verify a signed agent SKILL.md (JWS + did:web) and scan it for prompt-injection before your pipeline or agent trusts it. From skillx.md, the trust layer for the agentic web.'
+description: 'Verify a signed agent SKILL.md (JWS + did:web) and scan for prompt injection before your pipeline trusts it.'
 author: 'The Holding Company'
 branding:
   icon: 'shield'
