@@ -311,7 +311,26 @@ def main():
     ins.set_defaults(fn=cmd_install)
 
     args = ap.parse_args()
-    args.fn(args)
+    # Network and parse failures below this line are environmental, not
+    # signature verdicts: exit 1 with one clean line (never a traceback), and
+    # let CI map a fetch failure to a failed job — fail closed.
+    try:
+        args.fn(args)
+    except urllib.error.HTTPError as e:
+        hint = ""
+        if "infinite loop" in str(e).lower():
+            hint = (
+                " — the server redirects this URL to itself; the file likely"
+                " does not exist and the site misroutes 404s"
+            )
+        reason = " ".join(str(e.reason).split())
+        sys.exit(f"skillx: ERROR fetching {e.url}: HTTP {e.code} {reason}{hint}")
+    except urllib.error.URLError as e:
+        sys.exit(f"skillx: ERROR fetching: {e.reason}")
+    except TimeoutError:
+        sys.exit("skillx: ERROR: network timeout after 15s")
+    except json.JSONDecodeError as e:
+        sys.exit(f"skillx: ERROR: expected JSON but got something else ({e.msg})")
 
 
 if __name__ == "__main__":
